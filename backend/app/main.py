@@ -6,9 +6,10 @@ import os
 import uuid
 import asyncio
 
-from app.models import RequestPayload, AgentResponse, Intent
+from app.models import RequestPayload, AgentResponse, Intent, ChatRequest, ChatResponse
 from app.core.orchestrator import AIOrchestrator
 from app.sandbox_executor import run_in_sandbox
+from app.agents.specialists import InteractiveChatAgent
 
 app = FastAPI(title="AI Code Mentor API - Orchestrator Powered")
 
@@ -56,6 +57,21 @@ async def sandbox_run(request: RunRequest):
         job_id = str(uuid.uuid4())
         result = run_in_sandbox(job_id, request.files, request.test_command)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/agents/chat", response_model=ChatResponse)
+async def agent_chat(request: ChatRequest):
+    try:
+        result = await InteractiveChatAgent.execute(request)
+        if "action" not in result:
+            result = {
+                "action": "explain_only",
+                "target_file": request.current_file_path,
+                "code": "",
+                "explanation": result.get("explanation", "Agent executed query but returned no actionable JSON.")
+            }
+        return ChatResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -76,3 +76,32 @@ class DebugAgent:
            "actions": [{"file": "...", "diff": "Fixed version of the code that will pass tests."}]
         }"""
         return await BaseAgent.chat_completion(prompt, json.dumps(context, indent=2))
+
+class InteractiveChatAgent:
+    @staticmethod
+    async def execute(request: Any) -> Dict[str, Any]:
+        prompt = """You are an interactive AI Code Assistant in an IDE, like Cursor.
+        You must respond to the user's natural language request. Use the current context to safely navigate the codebase.
+        You must strictly output ONLY valid JSON matching this schema:
+        {
+          "action": "modify_file" | "create_file" | "insert_code" | "explain_only",
+          "target_file": "path/to/file",
+          "code": "full modified code, or the inserted snippet, or an empty string if explain_only",
+          "explanation": "your conversational response to the user"
+        }
+        - Use "modify_file" to completely replace an existing file.
+        - Use "create_file" to make a new file (validate path extension).
+        - Use "insert_code" if it is just a snippet replacement.
+        - Use "explain_only" if no code changes are required.
+        Do NOT wrap JSON in markdown blocks (no ```json ... ``` quotes). Just raw JSON.
+        """
+        
+        context = {
+            "user_message": request.user_message,
+            "current_file_path": request.current_file_path,
+            "current_file_content": request.current_file_content,
+            "selected_code": request.selected_code,
+            "project_files": list(request.full_project_tree.keys())
+        }
+        
+        return await BaseAgent.chat_completion(prompt, json.dumps(context, indent=2))

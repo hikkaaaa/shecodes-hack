@@ -31,3 +31,22 @@ class AgentResponse(BaseModel):
     metadata: Dict[str, Any] = {}
     score: Optional[int] = None
     insights: Optional[str] = None
+
+class AgentAction(str, Enum):
+    MODIFY_FILE = "modify_file"
+    CREATE_FILE = "create_file"
+    INSERT_CODE = "insert_code"
+    EXPLAIN_ONLY = "explain_only"
+
+class ChatRequest(BaseModel):
+    user_message: str
+    current_file_content: str
+    current_file_path: str
+    full_project_tree: Dict[str, str]
+    selected_code: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    action: AgentAction
+    target_file: str
+    code: str
+    explanation: Optional[str] = ""
