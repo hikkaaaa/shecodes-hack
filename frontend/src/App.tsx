@@ -189,10 +189,10 @@ function App() {
                 )}
 
                 {/* Issue List */}
-                {analysisResult.issues && analysisResult.issues.length > 0 && (
+                {analysisResult.feedback && analysisResult.feedback.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-6 mb-3">Detected Issues</h4>
-                    {analysisResult.issues.map((issue: any, idx: number) => (
+                    {analysisResult.feedback.map((issue: any, idx: number) => (
                       <div key={idx} className="p-4 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-slate-600 transition-colors group">
                         <div className="flex items-start gap-3">
                           {issue.severity === 'high' ? <AlertTriangle className="text-red-400 mt-0.5 shrink-0" size={16} /> : <AlertTriangle className="text-amber-400 mt-0.5 shrink-0" size={16} />}

@@ -6,10 +6,11 @@ import os
 import uuid
 import asyncio
 
-from .sandbox_executor import run_in_sandbox
-from .agent import analyze_code
+from app.models import RequestPayload, AgentResponse, Intent
+from app.core.orchestrator import AIOrchestrator
+from app.sandbox_executor import run_in_sandbox
 
-app = FastAPI(title="AI Code Mentor API")
+app = FastAPI(title="AI Code Mentor API - Orchestrator Powered")
 
 # Setup CORS for the frontend
 app.add_middleware(
@@ -22,11 +23,8 @@ app.add_middleware(
 
 class AnalyzeRequest(BaseModel):
     files: dict[str, str]
-
-class AnalyzeResponse(BaseModel):
-    issues: List[dict]
-    score: int
-    insights: str
+    active_file: str = "index.py"
+    intent: Intent = Intent.REVIEW
 
 class RunRequest(BaseModel):
     files: dict[str, str]
@@ -37,11 +35,17 @@ class RunResponse(BaseModel):
     stderr: str
     error: bool
 
-@app.post("/api/v1/projects/analyze", response_model=AnalyzeResponse)
+@app.post("/api/v1/projects/analyze", response_model=AgentResponse)
 async def analyze(request: AnalyzeRequest):
-    # Pass the files to the AI agent
+    # Route through the intelligent core Orchestrator
     try:
-        result = await analyze_code(request.files)
+        payload = RequestPayload(
+            files=request.files,
+            intent=request.intent,
+            active_file=request.active_file,
+            extra_context={}
+        )
+        result = await AIOrchestrator.handle_request(payload)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
