@@ -39,166 +39,210 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-900 text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-full text-slate-100 overflow-hidden font-sans relative" style={{ backgroundColor: '#070210' }}>
+
+      {/* Background Glow Effects (Matching the aesthetic) */}
+      <div className="absolute top-0 inset-x-0 h-96 bg-fuchsia-900/10 blur-[120px] rounded-full pointer-events-none -translate-y-1/2"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-purple-900/10 blur-[150px] rounded-full pointer-events-none"></div>
 
       {/* Top Navbar */}
-      <div className="flex h-12 border-b border-slate-700/50 items-center justify-between px-4 bg-slate-800/80 backdrop-blur">
-        <div className="flex items-center space-x-2">
-          <Code className="text-indigo-400" />
-          <span className="font-semibold tracking-wide flex items-center gap-2">AI Code Mentor <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-xs">Educational Edition</span></span>
+      <div className="flex h-16 border-b border-fuchsia-900/30 items-center justify-between px-6 bg-[#0B0616]/70 backdrop-blur-md relative z-10">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-700 flex items-center justify-center shadow-[0_0_15px_rgba(192,132,252,0.4)]">
+            <Code className="text-white w-4 h-4" />
+          </div>
+          <span className="font-bold tracking-tight text-white flex items-center gap-3 text-lg">
+            AI Code Mentor
+            <span className="bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-[inset_0_0_10px_rgba(217,70,239,0.1)]">
+              Educational Edition
+            </span>
+          </span>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-4">
           <button
             onClick={handleRun}
             disabled={isRunning}
-            className="flex items-center space-x-2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-md transition-colors disabled:opacity-50 text-sm font-medium"
+            className="group relative flex items-center space-x-2 px-6 py-2 bg-gradient-to-br from-[#1B0F33] to-[#120A22] border border-purple-500/30 hover:border-fuchsia-400 hover:shadow-[0_0_20px_rgba(192,132,252,0.3)] rounded-full transition-all disabled:opacity-50 text-sm font-semibold active:scale-95 text-purple-200 hover:text-white overflow-hidden"
           >
-            <Play size={16} />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <Play size={15} />
             <span>{isRunning ? 'Running...' : 'Run Code'}</span>
           </button>
 
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="flex items-center space-x-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors disabled:opacity-50 text-sm font-medium shadow-lg shadow-indigo-600/20"
+            className="group relative flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500  hover:shadow-[0_0_25px_rgba(217,70,239,0.5)] rounded-full transition-all disabled:opacity-50 text-sm font-bold active:scale-95 border border-white/10"
           >
-            <Sparkles size={16} />
-            <span>{isAnalyzing ? 'Analyzing...' : 'AI Analyze'}</span>
+            <Sparkles size={15} />
+            <span>{isAnalyzing ? 'Analyzing AST...' : 'Optimize Details'}</span>
           </button>
         </div>
       </div>
 
       {/* Main Workspace */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10 m-4 gap-4">
 
         {/* Left Sidebar (File Explorer) */}
-        <div className="w-64 border-r border-slate-700/50 bg-slate-800/30 flex flex-col">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider p-4 pb-2 border-b border-slate-700/50">Explorer</div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="w-64 flex flex-col rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="text-[10px] font-bold text-fuchsia-400/70 uppercase tracking-[0.2em] p-5 pb-3 border-b border-fuchsia-900/30 bg-[#160B31]/50">Explorer</div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1">
             {Object.keys(files).map((file) => (
               <div
                 key={file}
                 onClick={() => setActiveFile(file)}
-                className={`flex items-center space-x-2 px-3 py-2 cursor-pointer rounded-md transition-colors ${activeFile === file ? 'bg-indigo-500/10 text-indigo-300' : 'hover:bg-slate-700/50 text-slate-300'}`}
+                className={`flex items-center space-x-3 px-3 py-2.5 cursor-pointer rounded-xl transition-all ${activeFile === file ? 'bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(192,132,252,0.15)]' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200 border border-transparent'}`}
               >
-                <FileCode2 size={16} className={activeFile === file ? 'text-indigo-400' : 'text-slate-500'} />
-                <span className="text-sm">{file}</span>
+                <FileCode2 size={16} className={activeFile === file ? 'text-fuchsia-400' : 'text-slate-600'} />
+                <span className="text-sm font-medium">{file}</span>
               </div>
             ))}
           </div>
 
           {/* Quick Stats Widget */}
-          <div className="p-4 border-t border-slate-700/50 bg-slate-800/50">
-            <div className="text-xs text-slate-400 font-medium mb-2">Growth Tracker</div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-300">Avg Score</span>
-              <span className="text-indigo-400 font-mono">82/100</span>
+          <div className="p-5 border-t border-fuchsia-900/30 bg-gradient-to-b from-transparent to-fuchsia-900/10">
+            <div className="text-[10px] text-fuchsia-400/70 uppercase tracking-[0.2em] font-bold mb-3">Growth Tracker</div>
+            <div className="flex items-center justify-between text-sm bg-[#0A0516] p-4 rounded-xl border border-fuchsia-900/40 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-fuchsia-600/20 blur-2xl"></div>
+              <span className="text-slate-300 font-medium z-10">Avg Score</span>
+              <span className="text-fuchsia-300 font-bold z-10">82/100</span>
             </div>
           </div>
         </div>
 
         {/* Center Canvas (Editor + Terminal) */}
-        <div className="flex flex-col flex-1 border-r border-slate-700/50">
+        <div className="flex flex-col flex-1 gap-4">
 
-          {/* Tabs */}
-          <div className="flex h-10 bg-slate-800/50 border-b border-slate-700/50">
-            <div className="px-4 py-2 border-r border-slate-700/50 bg-slate-900 border-t-2 border-t-indigo-500 text-sm text-indigo-300 flex items-center space-x-2 shadow-sm">
-              <FileCode2 size={14} />
-              <span>{activeFile}</span>
+          {/* Monaco Editor Container */}
+          <div className="flex-1 rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative group">
+            {/* Subtle editor background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+
+            {/* Tab */}
+            <div className="flex h-12 bg-[#160B31]/50 border-b border-fuchsia-900/30">
+              <div className="px-6 py-0 border-r border-fuchsia-900/30 bg-[#0F0822] border-t-[3px] border-t-fuchsia-500 text-sm text-fuchsia-100 flex items-center space-x-2 relative shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-500/10 to-transparent pointer-events-none"></div>
+                <FileCode2 size={15} className="text-fuchsia-400" />
+                <span className="font-medium tracking-wide">{activeFile}</span>
+              </div>
             </div>
-          </div>
 
-          {/* Monaco Editor */}
-          <div className="flex-1 w-full bg-[#1e1e1e] relative">
-            {activeFile && (
-              <Editor
-                height="100%"
-                language={activeFile.endsWith('.py') ? 'python' : 'javascript'}
-                theme="vs-dark"
-                value={files[activeFile]}
-                onChange={(val) => updateFile(activeFile, val || '')}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  padding: { top: 16 },
-                  scrollBeyondLastLine: false,
-                  smoothScrolling: true,
-                  cursorBlinking: "smooth",
-                  cursorSmoothCaretAnimation: "on",
-                }}
-              />
-            )}
+            <div className="flex-1 w-full bg-[#0a0515]/50 relative pt-2">
+              {activeFile && (
+                <Editor
+                  height="100%"
+                  language={activeFile.endsWith('.py') ? 'python' : 'javascript'}
+                  theme="vs-dark" // We will override standard monaco colors if needed, but vs-dark is readable
+                  value={files[activeFile]}
+                  onChange={(val) => updateFile(activeFile, val || '')}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    padding: { top: 16 },
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    cursorBlinking: "smooth",
+                    cursorSmoothCaretAnimation: "on",
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {/* Bottom Terminal Panel */}
-          <div className="h-64 border-t border-slate-700/50 bg-slate-950 flex flex-col">
-            <div className="flex items-center px-4 py-2 border-b border-slate-800 bg-slate-900 text-xs text-slate-400 uppercase font-semibold tracking-wider">
-              <TerminalIcon size={14} className="mr-2" /> Output Terminal
+          <div className="h-56 rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative">
+            <div className="absolute top-0 right-0 w-48 h-1/2 bg-blue-600/10 blur-3xl pointer-events-none"></div>
+            <div className="flex items-center px-5 py-3 border-b border-fuchsia-900/30 bg-[#160B31]/50 text-[10px] text-fuchsia-400/70 uppercase font-bold tracking-[0.2em]">
+              <TerminalIcon size={14} className="mr-2.5 text-fuchsia-500" /> Output Terminal
             </div>
-            <div className="flex-1 p-4 font-mono text-sm overflow-y-auto text-slate-300 leading-relaxed">
+            <div className="flex-1 p-5 font-mono text-sm overflow-y-auto text-slate-300 leading-relaxed bg-[#0a0515]/50">
               {runResult && (
-                <>
-                  {runResult.stdout && <pre className="text-emerald-400">{runResult.stdout}</pre>}
-                  {runResult.stderr && <pre className="text-red-400">{runResult.stderr}</pre>}
-                </>
+                <div className="animate-in fade-in duration-300">
+                  {runResult.stdout && <pre className="text-[#a78bfa] whitespace-pre-wrap">{runResult.stdout}</pre>}
+                  {runResult.stderr && <pre className="text-pink-400 whitespace-pre-wrap mt-2">{runResult.stderr}</pre>}
+                </div>
               )}
-              {!runResult && <span className="text-slate-600 italic">Hit 'Run Code' to see output here...</span>}
+              {!runResult && <div className="flex h-full items-center justify-center"><span className="text-fuchsia-900/40 italic flex items-center gap-2"><Sparkles size={16} /> Waiting for execution...</span></div>}
             </div>
           </div>
         </div>
 
         {/* Right Panel (AI Analysis) */}
-        <div className="w-80 bg-slate-800/30 flex flex-col overflow-y-auto">
-          <div className="h-10 flex items-center px-4 border-b border-slate-700/50 bg-slate-800/80 sticky top-0 font-medium text-sm gap-2">
-            <Sparkles size={16} className="text-indigo-400" />
-            AI Reviewer
+        <div className="w-[380px] rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex flex-col overflow-y-auto relative">
+          <div className="h-16 flex items-center px-6 border-b border-fuchsia-900/30 bg-[#160B31]/50 sticky top-0 z-20 font-bold text-base text-fuchsia-100 uppercase tracking-widest gap-3">
+            <div className="w-8 h-8 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
+              <Sparkles size={16} className="text-fuchsia-400" />
+            </div>
+            Intelligent Core
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="p-6 space-y-6">
             {!analysisResult && !isAnalyzing && (
-              <div className="text-center p-6 border border-slate-700/50 rounded-xl bg-slate-800/50 shadow-inner">
-                <Sparkles size={32} className="mx-auto text-slate-500 mb-3" />
-                <p className="text-sm text-slate-400">Click "AI Analyze" to run a full architectural and quality scan on your current workspace.</p>
+              <div className="text-center p-8 border border-fuchsia-900/30 rounded-2xl bg-gradient-to-b from-white/5 to-transparent relative overflow-hidden group">
+                <div className="absolute inset-0 bg-fuchsia-500/0 group-hover:bg-fuchsia-500/5 transition-colors"></div>
+                <div className="w-16 h-16 rounded-2xl bg-fuchsia-900/30 border border-fuchsia-500/20 mx-auto flex items-center justify-center mb-5 rotate-3 group-hover:rotate-6 transition-transform shadow-[0_0_20px_transparent] group-hover:shadow-[0_0_20px_rgba(217,70,239,0.2)]">
+                  <Sparkles size={28} className="text-fuchsia-400" />
+                </div>
+                <h3 className="text-white font-bold mb-2">Ready to Scan</h3>
+                <p className="text-sm text-slate-400 leading-relaxed font-medium">Click "Optimize Details" to run a full architectural and quality scan on your workspace.</p>
               </div>
             )}
 
             {isAnalyzing && (
-              <div className="flex items-center space-x-3 text-indigo-400 p-4 animate-pulse bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-                <span className="text-sm font-medium">Analyzing AST and generating insights...</span>
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-[3px] border-fuchsia-500/20"></div>
+                  <div className="absolute inset-0 rounded-full border-[3px] border-fuchsia-500 border-t-transparent animate-spin"></div>
+                </div>
+                <span className="text-sm font-bold text-fuchsia-300 tracking-widest uppercase animate-pulse">Analyzing AST...</span>
               </div>
             )}
 
             {analysisResult && !analysisResult.error && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
                 {/* Skill Score Card */}
-                <div className="p-5 rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl group-hover:bg-indigo-400/30 transition-all"></div>
-                  <div className="text-xs text-indigo-300 font-medium uppercase tracking-wider mb-1">Architecture Score</div>
-                  <div className="text-5xl font-bold text-white tracking-tighter shadow-sm">{analysisResult.score}<span className="text-2xl text-slate-500">/100</span></div>
+                <div className="p-6 rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-indigo-600/10 relative overflow-hidden group shadow-[0_0_30px_rgba(217,70,239,0.1)]">
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-fuchsia-500/30 rounded-full blur-[40px] group-hover:bg-fuchsia-400/40 transition-all duration-700"></div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500"></div>
+
+                  <div className="text-[10px] text-fuchsia-300 font-bold uppercase tracking-[0.2em] mb-2 relative z-10">Architecture Score</div>
+                  <div className="flex items-baseline relative z-10">
+                    <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-fuchsia-200 tracking-tighter drop-shadow-md">{analysisResult.score}</div>
+                    <span className="text-2xl text-fuchsia-500/50 font-bold ml-1">/100</span>
+                  </div>
                 </div>
 
                 {/* Insights Card */}
                 {analysisResult.insights && (
-                  <div className="p-4 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-300 leading-relaxed shadow-lg">
-                    <strong className="text-slate-200 block mb-2 flex items-center gap-1.5"><CheckCircle size={16} className="text-emerald-400" /> Executive Summary</strong>
+                  <div className="p-5 rounded-2xl bg-[#160B31]/60 border border-fuchsia-900/40 text-[15px] text-fuchsia-100/90 leading-relaxed shadow-lg relative overflow-hidden">
+                    <div className="absolute left-0 top-0 w-1 h-full bg-fuchsia-500"></div>
+                    <strong className="text-white block mb-3 flex items-center gap-2 font-bold tracking-wide uppercase text-xs"><CheckCircle size={16} className="text-fuchsia-400" /> Executive Summary</strong>
                     {analysisResult.insights}
                   </div>
                 )}
 
                 {/* Issue List */}
                 {analysisResult.feedback && analysisResult.feedback.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-6 mb-3">Detected Issues</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mt-8 mb-4">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-fuchsia-900/50"></div>
+                      <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-400 text-center">Detected Issues</h4>
+                      <div className="h-px flex-1 bg-gradient-to-l from-transparent to-fuchsia-900/50"></div>
+                    </div>
+
                     {analysisResult.feedback.map((issue: any, idx: number) => (
-                      <div key={idx} className="p-4 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-slate-600 transition-colors group">
-                        <div className="flex items-start gap-3">
-                          {issue.severity === 'high' ? <AlertTriangle className="text-red-400 mt-0.5 shrink-0" size={16} /> : <AlertTriangle className="text-amber-400 mt-0.5 shrink-0" size={16} />}
+                      <div key={idx} className="p-5 rounded-2xl bg-[#0F0822] border border-fuchsia-900/30 hover:border-fuchsia-500/50 transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(217,70,239,0.15)] relative overflow-hidden">
+                        <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-purple-500 to-pink-500 opacity-50 group-hover:opacity-100"></div>
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 p-2 rounded-xl bg-white/5 group-hover:bg-fuchsia-500/10 transition-colors">
+                            {issue.severity === 'high' ? <AlertTriangle className="text-pink-500" size={18} /> : <AlertTriangle className="text-fuchsia-400" size={18} />}
+                          </div>
                           <div>
-                            <div className="text-[13px] font-mono text-slate-400 mb-1">{issue.file} {issue.line ? `:${issue.line}` : ''}</div>
-                            <p className="text-sm text-slate-200 leading-relaxed group-hover:text-white transition-colors">{issue.message}</p>
+                            <div className="text-xs font-bold text-fuchsia-300 mb-1.5 uppercase tracking-wider">{issue.file} {issue.line ? `— Line ${issue.line}` : ''}</div>
+                            <p className="text-[14px] text-slate-300 leading-relaxed group-hover:text-white transition-colors">{issue.message}</p>
                           </div>
                         </div>
                       </div>
@@ -209,8 +253,9 @@ function App() {
             )}
 
             {analysisResult?.error && (
-              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
-                <AlertTriangle size={16} /> {analysisResult.error}
+              <div className="p-5 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-pink-300 text-sm flex items-start gap-3 shadow-[0_0_20px_rgba(236,72,153,0.1)]">
+                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                <span className="leading-relaxed font-medium">{analysisResult.error}</span>
               </div>
             )}
           </div>
