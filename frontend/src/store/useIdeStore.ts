@@ -6,6 +6,7 @@ interface IdeState {
     setActiveFile: (path: string) => void;
     updateFile: (path: string, content: string) => void;
     addFile: (path: string, content: string) => void;
+    removeFile: (path: string) => void;
 }
 
 export const useIdeStore = create<IdeState>((set) => ({
@@ -21,4 +22,12 @@ export const useIdeStore = create<IdeState>((set) => ({
     addFile: (path, content) => set((state) => ({
         files: { ...state.files, [path]: content }
     })),
+    removeFile: (path) => set((state) => {
+        const newFiles = { ...state.files };
+        delete newFiles[path];
+        return {
+            files: newFiles,
+            activeFile: state.activeFile === path ? (Object.keys(newFiles)[0] || null) : state.activeFile
+        };
+    }),
 }));
