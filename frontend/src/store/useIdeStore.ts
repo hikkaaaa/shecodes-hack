@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 
+export interface ExplanationBlock {
+    start_line: number;
+    end_line: number;
+    color: string;
+    explanation: string;
+}
+
 interface IdeState {
     files: Record<string, string>;
     activeFile: string | null;
@@ -7,6 +14,18 @@ interface IdeState {
     updateFile: (path: string, content: string) => void;
     addFile: (path: string, content: string) => void;
     removeFile: (path: string) => void;
+
+    runCompleted: boolean;
+    setRunCompleted: (completed: boolean) => void;
+
+    explanationMode: boolean;
+    setExplanationMode: (mode: boolean) => void;
+
+    explanationBlocks: ExplanationBlock[];
+    setExplanationBlocks: (blocks: ExplanationBlock[]) => void;
+
+    decorations: string[];
+    setDecorations: (ids: string[]) => void;
 }
 
 export const useIdeStore = create<IdeState>((set) => ({
@@ -30,4 +49,16 @@ export const useIdeStore = create<IdeState>((set) => ({
             activeFile: state.activeFile === path ? (Object.keys(newFiles)[0] || null) : state.activeFile
         };
     }),
+
+    runCompleted: false,
+    setRunCompleted: (completed) => set({ runCompleted: completed }),
+
+    explanationMode: false,
+    setExplanationMode: (mode) => set({ explanationMode: mode }),
+
+    explanationBlocks: [],
+    setExplanationBlocks: (blocks) => set({ explanationBlocks: blocks }),
+
+    decorations: [],
+    setDecorations: (ids) => set({ decorations: ids })
 }));

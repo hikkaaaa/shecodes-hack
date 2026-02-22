@@ -1,11 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { useIdeStore } from './store/useIdeStore';
-import { Play, Code, CheckCircle, AlertTriangle, FileCode2, Terminal as TerminalIcon, Sparkles, Brain, Send, Check, Undo2 } from 'lucide-react';
+import { Play, Code, CheckCircle, AlertTriangle, FileCode2, Terminal as TerminalIcon, Sparkles, Brain, Send, Check, Undo2, FolderOpen, X } from 'lucide-react';
 import axios from 'axios';
 
 function App() {
-  const { files, activeFile, setActiveFile, updateFile, addFile, removeFile } = useIdeStore();
+  const {
+    files, activeFile, setActiveFile, updateFile, addFile, removeFile,
+    runCompleted, setRunCompleted, explanationMode, setExplanationMode,
+    explanationBlocks, setExplanationBlocks, decorations, setDecorations
+  } = useIdeStore();
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
@@ -16,10 +21,12 @@ function App() {
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'agent', text: string, code?: string, action?: string, targetFile?: string, isApplied?: boolean, previousCode?: string }[]>([]);
   const [isChatting, setIsChatting] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
   };
 
@@ -32,6 +39,7 @@ function App() {
     try {
       const res = await axios.post('http://localhost:8000/api/v1/projects/analyze', { files });
       setAnalysisResult(res.data);
+      setExplanationMode(false);
     } catch (error) {
       console.error(error);
       setAnalysisResult({ error: 'Failed to analyze code.' });
@@ -41,16 +49,111 @@ function App() {
 
   const handleRun = async () => {
     setIsRunning(true);
+    setRunCompleted(false);
     setRunResult({ stdout: 'Running in sandbox...', stderr: '' });
     try {
       const command = `python ${activeFile}`;
       const res = await axios.post('http://localhost:8000/api/v1/sandbox/run', { files, test_command: command });
       setRunResult(res.data);
+      setRunCompleted(true);
     } catch (error) {
       console.error(error);
       setRunResult({ stdout: '', stderr: 'Failed to connect to Sandbox.', error: true });
     }
     setIsRunning(false);
+  };
+
+  const handleExplain = async () => {
+    setIsAnalyzing(true);
+    try {
+      const res = await axios.post('http://localhost:8000/api/v1/explain', {
+        file_content: activeFile ? files[activeFile] : '',
+        file_path: activeFile || '',
+        language: activeFile?.endsWith('.py') ? 'python' : 'javascript'
+      });
+      setExplanationBlocks(res.data.explanations);
+      setExplanationMode(true);
+      applyDecorations(res.data.explanations);
+    } catch (error) {
+      console.error(error);
+    }
+    setIsAnalyzing(false);
+  };
+
+  const applyDecorations = (blocks: any[]) => {
+    if (!editorRef.current) return;
+    const editor = editorRef.current;
+
+    let styleEl = document.getElementById('explain-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'explain-styles';
+      document.head.appendChild(styleEl);
+    }
+    let cssStr = '';
+    blocks.forEach(b => {
+      const c = b.color.replace('#', '');
+      cssStr += `.explain-decoration-${c} { background-color: ${b.color}20 !important; border-left: 3px solid ${b.color} !important; }\n`;
+    });
+    styleEl.innerHTML = cssStr;
+
+    const newDecorations = blocks.map(b => ({
+      range: { startLineNumber: b.start_line, startColumn: 1, endLineNumber: b.end_line, endColumn: 1 },
+      options: {
+        isWholeLine: true,
+        className: `explain-decoration-${b.color.replace('#', '')}`
+      }
+    }));
+
+    const decorationIds = editor.deltaDecorations(decorations, newDecorations);
+    setDecorations(decorationIds);
+  };
+
+  const clearDecorations = () => {
+    if (editorRef.current && decorations.length > 0) {
+      editorRef.current.deltaDecorations(decorations, []);
+    }
+    setDecorations([]);
+    setExplanationMode(false);
+    setExplanationBlocks([]);
+  };
+
+  const scrollToExplanation = (startLine: number) => {
+    if (editorRef.current) {
+      editorRef.current.revealLineInCenter(startLine);
+    }
+  };
+
+  const handleOpenFiles = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const content = evt.target?.result as string;
+        try {
+          const res = await axios.post('http://localhost:8000/api/v1/workspace/upload-file', {
+            filename: file.name,
+            content: content
+          });
+          if (res.data.status === 'SUCCESS') {
+            addFile(file.name, content);
+            setActiveFile(file.name);
+          }
+        } catch (error: any) {
+          console.error("Failed to upload file:", error);
+          alert(`Failed to load ${file.name}: ${error.response?.data?.detail || 'Unknown error'}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSendChat = async () => {
@@ -165,6 +268,16 @@ function App() {
         </div>
         <div className="flex space-x-4">
           <button
+            onClick={handleOpenFiles}
+            className="group relative flex items-center space-x-2 px-6 py-2 bg-gradient-to-br from-[#1B0F33] to-[#120A22] border border-purple-500/30 hover:border-fuchsia-400 hover:shadow-[0_0_20px_rgba(192,132,252,0.3)] rounded-full transition-all text-sm font-semibold active:scale-95 text-purple-200 hover:text-white overflow-hidden"
+          >
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <FolderOpen size={15} />
+            <span>Open Files</span>
+          </button>
+          <input type="file" multiple accept=".py,.js,.ts,.tsx,.json" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+
+          <button
             onClick={handleRun}
             disabled={isRunning}
             className="group relative flex items-center space-x-2 px-6 py-2 bg-gradient-to-br from-[#1B0F33] to-[#120A22] border border-purple-500/30 hover:border-fuchsia-400 hover:shadow-[0_0_20px_rgba(192,132,252,0.3)] rounded-full transition-all disabled:opacity-50 text-sm font-semibold active:scale-95 text-purple-200 hover:text-white overflow-hidden"
@@ -172,6 +285,16 @@ function App() {
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <Play size={15} />
             <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+          </button>
+
+          <button
+            onClick={handleExplain}
+            disabled={!runCompleted || isAnalyzing}
+            className="group relative flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-[#1B0F33] to-[#120A22] border border-cyan-500/30 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] rounded-full transition-all disabled:opacity-50 text-sm font-semibold active:scale-95 text-cyan-200 hover:text-white overflow-hidden"
+          >
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <Sparkles size={15} className="text-cyan-400" />
+            <span>Explain</span>
           </button>
 
           <button
@@ -190,7 +313,6 @@ function App() {
 
         {/* Left Sidebar (Action Bar + Panel) */}
         <div className="flex gap-4">
-          {/* Narrow Action Bar */}
           <div className="w-14 flex flex-col items-center py-4 rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] space-y-4">
             <button
               onClick={() => setSidebarMode('explorer')}
@@ -204,7 +326,6 @@ function App() {
             </button>
           </div>
 
-          {/* Sidebar Content Panel */}
           <div className="w-72 flex flex-col rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
             {sidebarMode === 'explorer' ? (
               <>
@@ -382,17 +503,24 @@ function App() {
           </div>
         </div>
 
-        {/* Right Panel (AI Analysis) */}
+        {/* Right Panel (AI Analysis or Explanation) */}
         <div className="w-[380px] rounded-2xl border border-fuchsia-900/30 bg-[#0F0822]/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex flex-col overflow-y-auto relative hidden xl:flex">
-          <div className="h-16 flex items-center px-6 border-b border-fuchsia-900/30 bg-[#160B31]/50 sticky top-0 z-20 font-bold text-base text-fuchsia-100 uppercase tracking-widest gap-3">
-            <div className="w-8 h-8 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
-              <Sparkles size={16} className="text-fuchsia-400" />
+          <div className="h-16 flex items-center px-6 border-b border-fuchsia-900/30 bg-[#160B31]/50 sticky top-0 z-20 font-bold text-base text-fuchsia-100 uppercase tracking-widest gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
+                <Sparkles size={16} className={explanationMode ? "text-cyan-400" : "text-fuchsia-400"} />
+              </div>
+              <span className={explanationMode ? "text-cyan-100" : "text-fuchsia-100"}>{explanationMode ? "Intelligent Core" : "Intelligent Core"}</span>
             </div>
-            Intelligent Core
+            {explanationMode && (
+              <button onClick={clearDecorations} className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           <div className="p-6 space-y-6">
-            {!analysisResult && !isAnalyzing && (
+            {!explanationMode && !analysisResult && !isAnalyzing && (
               <div className="text-center p-8 border border-fuchsia-900/30 rounded-2xl bg-gradient-to-b from-white/5 to-transparent relative overflow-hidden group">
                 <div className="absolute inset-0 bg-fuchsia-500/0 group-hover:bg-fuchsia-500/5 transition-colors"></div>
                 <div className="w-16 h-16 rounded-2xl bg-fuchsia-900/30 border border-fuchsia-500/20 mx-auto flex items-center justify-center mb-5 rotate-3 group-hover:rotate-6 transition-transform shadow-[0_0_20px_transparent] group-hover:shadow-[0_0_20px_rgba(217,70,239,0.2)]">
@@ -409,11 +537,27 @@ function App() {
                   <div className="absolute inset-0 rounded-full border-[3px] border-fuchsia-500/20"></div>
                   <div className="absolute inset-0 rounded-full border-[3px] border-fuchsia-500 border-t-transparent animate-spin"></div>
                 </div>
-                <span className="text-sm font-bold text-fuchsia-300 tracking-widest uppercase animate-pulse">Analyzing AST...</span>
+                <span className="text-sm font-bold text-fuchsia-300 tracking-widest uppercase animate-pulse">Analyzing...</span>
               </div>
             )}
 
-            {analysisResult && !analysisResult.error && (
+            {explanationMode && explanationBlocks.length > 0 && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {explanationBlocks.map((block: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border bg-[#0A0516] transition-all cursor-pointer hover:scale-[1.02]"
+                    style={{ borderColor: `${block.color}50`, borderLeftWidth: '4px', borderLeftColor: block.color }}
+                    onClick={() => scrollToExplanation(block.start_line)}
+                  >
+                    <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: block.color }}>Lines {block.start_line}-{block.end_line}</div>
+                    <p className="text-sm text-slate-300 leading-relaxed">{block.explanation}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!explanationMode && analysisResult && !analysisResult.error && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
                 {/* Skill Score Card */}
@@ -465,7 +609,7 @@ function App() {
               </div>
             )}
 
-            {analysisResult?.error && (
+            {!explanationMode && analysisResult?.error && (
               <div className="p-5 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-pink-300 text-sm flex items-start gap-3 shadow-[0_0_20px_rgba(236,72,153,0.1)]">
                 <AlertTriangle size={18} className="shrink-0 mt-0.5" />
                 <span className="leading-relaxed font-medium">{analysisResult.error}</span>
