@@ -17,6 +17,11 @@ function App() {
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'agent', text: string, code?: string, action?: string, targetFile?: string, isApplied?: boolean, previousCode?: string }[]>([]);
   const [isChatting, setIsChatting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
+
+  const handleEditorDidMount = (editor: any) => {
+    editorRef.current = editor;
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +99,31 @@ function App() {
     if (action === 'create_file') {
       addFile(targetFile, code);
       setActiveFile(targetFile);
-    } else if (action === 'modify_file' || action === 'insert_code') {
+    } else if (action === 'insert_code') {
+      if (!files[targetFile]) {
+        addFile(targetFile, code);
+      } else {
+        if (targetFile === activeFile && editorRef.current) {
+          const editor = editorRef.current;
+          const position = editor.getPosition();
+          editor.executeEdits('ai-agent', [{
+            range: {
+              startLineNumber: position?.lineNumber || 1,
+              startColumn: position?.column || 1,
+              endLineNumber: position?.lineNumber || 1,
+              endColumn: position?.column || 1
+            },
+            text: code,
+            forceMoveMarkers: true
+          }]);
+          updateFile(targetFile, editor.getValue());
+        } else {
+          const currentContent = files[targetFile];
+          updateFile(targetFile, currentContent + (currentContent.endsWith('\n') ? '' : '\n') + code);
+        }
+      }
+      setActiveFile(targetFile);
+    } else if (action === 'modify_file') {
       if (!files[targetFile]) {
         addFile(targetFile, code);
       } else {
@@ -318,6 +347,7 @@ function App() {
                   theme="vs-dark" // We will override standard monaco colors if needed, but vs-dark is readable
                   value={files[activeFile]}
                   onChange={(val) => updateFile(activeFile, val || '')}
+                  onMount={handleEditorDidMount}
                   options={{
                     minimap: { enabled: false },
                     fontSize: 14,
